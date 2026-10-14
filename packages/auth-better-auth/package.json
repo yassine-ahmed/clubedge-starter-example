@@ -1,0 +1,37 @@
+{
+  "name": "@clubedge/auth-better-auth",
+  "version": "0.16.0",
+  "description": "Better Auth adapter for @clubedge/auth, storing users and sessions in your own PostgreSQL.",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:check": "drizzle-kit check"
+  },
+  "dependencies": {
+    "@clubedge/auth": "workspace:*",
+    "@clubedge/core": "workspace:*",
+    "better-auth": "^1.7.7",
+    "drizzle-orm": "^0.45.4"
+  },
+  "devDependencies": {
+    "@clubedge/db": "workspace:*",
+    "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "clubedge": {
+    "migrations": {
+      "folder": "drizzle",
+      "table": "__drizzle_migrations_better_auth"
+    }
+  }
+}

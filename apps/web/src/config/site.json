@@ -1,0 +1,11 @@
+{
+  "name": "Upgrade Test",
+  "shortName": "Upgrade Test",
+  "description": "Upgrade Test application foundation.",
+  "serviceId": "upgrade-test",
+  "workspaceLabel": "Application workspace",
+  "links": {
+    "repository": "https://github.com/Clubedge/clubedge-starter",
+    "setupGuide": "https://github.com/Clubedge/clubedge-starter/blob/main/SETUP.md"
+  }
+}

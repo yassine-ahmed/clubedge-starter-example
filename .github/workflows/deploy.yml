@@ -1,0 +1,19 @@
+# Deploys on demand: Actions > Deploy > Run workflow. SETUP.md lists the secrets it needs.
+name: Deploy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  railway:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      # Uploads this checkout; Railway builds the image and runs the pre-deploy migrations.
+      - run: npx --yes @railway/cli@4 up --ci --service "$RAILWAY_SERVICE"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}

@@ -1,0 +1,50 @@
+import "server-only";
+import { z } from "zod";
+import type { StorageProvider } from "@clubedge/storage";
+import { createS3Storage } from "@clubedge/storage-s3";
+import { createFileSystemStorage } from "@clubedge/storage/file-system";
+import { optional, parseEnv } from "@/env/server";
+import { withSpans } from "@clubedge/core";
+
+export type { SignedUrlOptions, StorageProvider, UploadInput } from "@clubedge/storage";
+
+// S3-compatible storage: AWS S3, Cloudflare R2, MinIO, and similar services.
+const storageEnvSchema = z.object({
+  STORAGE_BUCKET: optional(z.string()),
+  STORAGE_REGION: z.string().default("auto"),
+  STORAGE_ENDPOINT: optional(z.url()),
+  STORAGE_ACCESS_KEY_ID: optional(z.string()),
+  STORAGE_SECRET_ACCESS_KEY: optional(z.string()),
+  STORAGE_PUBLIC_URL: optional(z.url()),
+  STORAGE_DIRECTORY: optional(z.string()),
+});
+
+let provider: StorageProvider | undefined;
+
+function resolveProvider(): StorageProvider {
+  if (provider) return provider;
+  const env = parseEnv(storageEnvSchema, "Storage");
+  // In development without an object storage service, a local folder stands in for S3.
+  if (env.STORAGE_DIRECTORY) {
+    provider = createFileSystemStorage({ directory: env.STORAGE_DIRECTORY });
+    return provider;
+  }
+  provider = createS3Storage({
+    bucket: env.STORAGE_BUCKET || undefined,
+    region: env.STORAGE_REGION,
+    endpoint: env.STORAGE_ENDPOINT || undefined,
+    accessKeyId: env.STORAGE_ACCESS_KEY_ID || undefined,
+    secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY || undefined,
+    publicUrl: env.STORAGE_PUBLIC_URL || undefined,
+  });
+  return provider;
+}
+
+/** The configured storage provider, resolved on first use so imports stay side-effect free. */
+export const storage: StorageProvider = withSpans("storage", {
+  upload: (input) => resolveProvider().upload(input),
+  download: (key) => resolveProvider().download(key),
+  delete: (key) => resolveProvider().delete(key),
+  exists: (key) => resolveProvider().exists(key),
+  getSignedUrl: (key, options) => resolveProvider().getSignedUrl(key, options),
+});

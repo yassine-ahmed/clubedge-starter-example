@@ -1,0 +1,70 @@
+{
+  "name": "upgrade-test",
+  "version": "0.16.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=@clubedge/web --filter=@clubedge/local-db",
+    "build": "turbo run build",
+    "start": "pnpm --filter @clubedge/web start",
+    "lint": "eslint .",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm -r --if-present run db:generate",
+    "db:migrate": "pnpm -r --if-present run db:migrate",
+    "db:push": "pnpm --filter @clubedge/db db:push",
+    "db:studio": "pnpm --filter @clubedge/db db:studio",
+    "db:check": "pnpm -r --if-present run db:check",
+    "db:seed": "pnpm --filter @clubedge/db db:seed",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "docker:dev": "docker compose up --build",
+    "docker:build": "docker build -t upgrade-test .",
+    "docker:start": "docker run --rm -p 3000:3000 --env-file apps/web/.env.local upgrade-test",
+    "check:services": "pnpm --filter @clubedge/web check:services",
+    "clubedge": "pnpm dlx @clubedge/create-clubedge-app@latest",
+    "infra:up": "pnpm --filter @clubedge/local-db dev",
+    "infra:reset": "node -e \"require('node:fs').rmSync('.data', { recursive: true, force: true })\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^22.18.6",
+    "esbuild": "^0.25.0",
+    "eslint": "^10.12.0",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "^0.25.0"
+    }
+  },
+  "clubedge": {
+    "cliVersion": "0.24.0",
+    "starterRepository": "Clubedge/clubedge-starter",
+    "starterRef": "v0.16.0",
+    "starterCommit": "e233aa68ddc8c21df6cf2b01b9e26876d2e4aeca",
+    "framework": "next",
+    "modules": {
+      "auth": "better-auth",
+      "storage": "s3",
+      "cache": "redis",
+      "email": "smtp",
+      "payments": "none",
+      "jobs": "none",
+      "observability": "none",
+      "infra": "local",
+      "deploy": "railway"
+    }
+  }
+}

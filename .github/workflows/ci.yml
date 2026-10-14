@@ -1,0 +1,95 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Build the way the app is developed: with the env example copied into place.
+      - run: cp .env.example apps/web/.env.local
+      - run: pnpm build
+      - name: Serve the production build
+        run: |
+          set -euo pipefail
+          pnpm start > "$RUNNER_TEMP/app.log" 2>&1 &
+          trap 'tail -n 50 "$RUNNER_TEMP/app.log"' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent --output /dev/null http://127.0.0.1:3000/api/health && break
+            sleep 1
+          done
+          for path in / /dashboard /api/health; do
+            curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:3000$path"
+          done
+          curl --fail --silent --show-error --output /dev/null http://127.0.0.1:3000/login
+      - run: pnpm audit --audit-level high
+
+  e2e:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
+  docker:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the production image
+        run: docker build --tag app:ci .
+      - name: Run the image's migrations twice; the second run changes nothing
+        run: |
+          set -euo pipefail
+          for run in 1 2; do
+            docker run --rm --network host               --env DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/app               app:ci node /app/migrate.mjs
+          done
+          PGPASSWORD=postgres psql --host 127.0.0.1 --username postgres --dbname app             --command "select count(*) from public.users"
+      - name: Start the image and check health
+        run: |
+          set -euo pipefail
+          docker run --detach --name app --publish 3000:3000 \
+            --env DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/postgres \
+            app:ci
+          trap 'docker logs app; docker rm --force app' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "The container did not become healthy."
+          exit 1

@@ -1,0 +1,40 @@
+{
+  "name": "@clubedge/web",
+  "version": "0.16.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node scripts/start-standalone.mjs",
+    "typecheck": "tsc --noEmit",
+    "check:services": "tsx scripts/check-services.ts"
+  },
+  "dependencies": {
+    "@clubedge/auth": "workspace:*",
+    "@clubedge/auth-better-auth": "workspace:*",
+    "@clubedge/cache": "workspace:*",
+    "@clubedge/cache-redis": "workspace:*",
+    "@clubedge/core": "workspace:*",
+    "@clubedge/db": "workspace:*",
+    "@clubedge/email": "workspace:*",
+    "@clubedge/email-smtp": "workspace:*",
+    "@clubedge/storage": "workspace:*",
+    "@clubedge/storage-s3": "workspace:*",
+    "@clubedge/ui": "workspace:*",
+    "cn": "^0.4.0",
+    "lucide-react": "^0.468.0",
+    "next": "^16.1.0",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.20.5"
+  }
+}
